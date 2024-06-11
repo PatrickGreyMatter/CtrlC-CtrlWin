@@ -15,7 +15,6 @@
             <RowDefinition Height="5"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <!-- Added row for status bar -->
         </Grid.RowDefinitions>
 
         <!-- Title -->
@@ -54,35 +53,37 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <!-- Display date and time -->
                         <TextBlock Text="{Binding DateSaved, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"
-                           VerticalAlignment="Center"
-                           Margin="5"
-                           Grid.Column="0" />
+                            VerticalAlignment="Center"
+                            Margin="5"
+                            Grid.Column="0" />
                         <!-- Display dynamically resized thumbnail of the image -->
                         <Image Width="50" Height="50" Margin="5" Grid.Column="1" Source="{Binding FilePath, Converter={StaticResource FilePathToImageSourceConverter}}" />
-                        <!-- Display text content -->
-                        <TextBlock Text="{Binding Name}"
-                           TextWrapping="NoWrap"
-                           TextTrimming="CharacterEllipsis"
-                           VerticalAlignment="Center"
-                           Margin="5"
-                           Grid.Column="2" />
-                        <!-- Buttons for copying and deleting -->
+                        <!-- Text block for file name -->
+                        <TextBlock Text="{Binding Name}" Margin="5" VerticalAlignment="Center" Grid.Column="2" />
+                        <!-- Buttons for copying, renaming, and deleting -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="5,0">
                             <Button Content="Copier"
-                            Width="75"
-                            Height="30"
-                            Margin="5,0"
-                            Click="CopyButton_Click"
-                            Tag="{Binding}" />
+                                    Width="75"
+                                    Height="30"
+                                    Margin="5,0"
+                                    Click="CopyButton_Click"
+                                    Tag="{Binding}" />
+                            <Button Content="Renommer"
+                                    Width="75"
+                                    Height="30"
+                                    Margin="5,0"
+                                    Click="RenameButton_Click"
+                                    Tag="{Binding}" />
                             <Button Content="Supprimer"
-                            Width="75"
-                            Height="30"
-                            Margin="5,0"
-                            Click="DeleteButton_Click"
-                            Tag="{Binding}" />
+                                    Width="75"
+                                    Height="30"
+                                    Margin="5,0"
+                                    Click="DeleteButton_Click"
+                                    Tag="{Binding}" />
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
@@ -117,9 +118,19 @@
                             <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
                         </Image.LayoutTransform>
                     </Image>
-                    <MediaElement x:Name="FullVideoBox"
-                                  Visibility="Collapsed"
-                                  Stretch="Uniform"/>
+                    <Grid x:Name="FullVideoContainer" Visibility="Collapsed">
+                        <MediaElement x:Name="FullVideoBox"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      LoadedBehavior="Manual"
+                                      UnloadedBehavior="Stop"
+                                      MediaEnded="FullVideoBox_MediaEnded"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="10">
+                            <Button Content="Pause" Click="PauseButton_Click" Width="75" Height="30" Margin="5"/>
+                            <Button Content="Fullscreen" Click="FullscreenButton_Click" Width="75" Height="30" Margin="5"/>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </ScrollViewer>
             <Button x:Name="CollapseButton"

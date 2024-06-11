@@ -5,14 +5,17 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CtrlWin.Data;
 using CtrlWin.Models;
 using CtrlWin.Services;
 using Microsoft.EntityFrameworkCore;
+using Button = System.Windows.Controls.Button;
 using MessageBox = System.Windows.MessageBox;
-using System.Windows.Forms;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using Orientation = System.Windows.Controls.Orientation;
 
 namespace CtrlWin
 {
@@ -21,6 +24,8 @@ namespace CtrlWin
         private readonly ClipboardDbContext _context;
         private readonly ClipboardMonitorService _clipboardMonitorService;
         private ScaleTransform scaleTransform = new ScaleTransform(1.0, 1.0);
+        private bool isPaused = false;
+        private Window? fullScreenWindow = null;
 
         public MainWindow()
         {
@@ -73,14 +78,108 @@ namespace CtrlWin
             }
         }
 
+        private void PauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (isPaused)
+            {
+                FullVideoBox.Play();
+                ((Button)sender).Content = "Pause";
+                isPaused = false;
+            }
+            else
+            {
+                FullVideoBox.Pause();
+                ((Button)sender).Content = "Resume";
+                isPaused = true;
+            }
+        }
+
+
+
+        private void FullscreenButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (fullScreenWindow == null)
+            {
+                fullScreenWindow = new Window
+                {
+                    WindowStyle = WindowStyle.None,
+                    WindowState = WindowState.Maximized,
+                    Content = new Grid
+                    {
+                        Background = new SolidColorBrush(Colors.Black),
+                        Children =
+                {
+                    new MediaElement
+                    {
+                        Source = FullVideoBox.Source,
+                        LoadedBehavior = MediaState.Manual,
+                        UnloadedBehavior = MediaState.Manual,
+                        Stretch = Stretch.Uniform,
+                        Name = "FullScreenVideo"
+                    },
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        Margin = new Thickness(10),
+                        Children =
+                        {
+                            new Button { Content = "Pause", Width = 75, Height = 30, Margin = new Thickness(5) },
+                            new Button { Content = "Exit Fullscreen", Width = 100, Height = 30, Margin = new Thickness(5) }
+                        }
+                    }
+                }
+                    }
+                };
+
+                // Attach event handlers
+                ((MediaElement)((Grid)fullScreenWindow.Content).Children[0]).MediaEnded += (s, ev) =>
+                {
+                    ((MediaElement)fullScreenWindow.Content).Stop();
+                    fullScreenWindow.Close();
+                    fullScreenWindow = null;
+                };
+
+                ((MediaElement)((Grid)fullScreenWindow.Content).Children[0]).MediaOpened += (s, ev) =>
+                {
+                    ((MediaElement)((Grid)fullScreenWindow.Content).Children[0]).Play();
+                };
+
+                // Attach button click event handlers
+                var buttons = ((StackPanel)((Grid)fullScreenWindow.Content).Children[1]).Children;
+                ((Button)buttons[0]).Click += PauseButton_Click;
+                ((Button)buttons[1]).Click += ExitFullscreenButton_Click;
+
+                fullScreenWindow.ShowDialog();
+            }
+        }
+
+
+
+
+
+        private void ExitFullscreenButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (fullScreenWindow != null)
+            {
+                fullScreenWindow.Close();
+                fullScreenWindow = null;
+            }
+        }
+
+
+
         private void ClipboardListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            StopVideo();
+
             if (ClipboardListBox.SelectedItem is TextItem textItem && !string.IsNullOrWhiteSpace(textItem.Content))
             {
                 FullTextBox.Text = textItem.Content;
                 FullTextBox.Visibility = Visibility.Visible;
                 FullImageBox.Visibility = Visibility.Collapsed;
-                FullVideoBox.Visibility = Visibility.Collapsed;
+                FullVideoContainer.Visibility = Visibility.Collapsed;
                 CollapseButton.Visibility = Visibility.Visible;
             }
             else if (ClipboardListBox.SelectedItem is ImageItem imageItem && !string.IsNullOrWhiteSpace(imageItem.FilePath))
@@ -112,7 +211,7 @@ namespace CtrlWin
                 }
 
                 FullTextBox.Visibility = Visibility.Collapsed;
-                FullVideoBox.Visibility = Visibility.Collapsed;
+                FullVideoContainer.Visibility = Visibility.Collapsed;
                 CollapseButton.Visibility = Visibility.Visible;
             }
             else if (ClipboardListBox.SelectedItem is VideoItem videoItem && !string.IsNullOrWhiteSpace(videoItem.FilePath))
@@ -122,7 +221,8 @@ namespace CtrlWin
                     if (File.Exists(videoItem.FilePath))
                     {
                         FullVideoBox.Source = new Uri(videoItem.FilePath, UriKind.Absolute);
-                        FullVideoBox.Visibility = Visibility.Visible;
+                        FullVideoContainer.Visibility = Visibility.Visible;
+                        FullVideoBox.Play();
                     }
                     else
                     {
@@ -143,7 +243,7 @@ namespace CtrlWin
             {
                 FullTextBox.Visibility = Visibility.Collapsed;
                 FullImageBox.Visibility = Visibility.Collapsed;
-                FullVideoBox.Visibility = Visibility.Collapsed;
+                FullVideoContainer.Visibility = Visibility.Collapsed;
                 CollapseButton.Visibility = Visibility.Collapsed;
             }
 
@@ -243,9 +343,11 @@ namespace CtrlWin
 
         private void CollapseButton_Click(object sender, RoutedEventArgs e)
         {
+            StopVideo();
+
             FullTextBox.Visibility = Visibility.Collapsed;
             FullImageBox.Visibility = Visibility.Collapsed;
-            FullVideoBox.Visibility = Visibility.Collapsed;
+            FullVideoContainer.Visibility = Visibility.Collapsed;
             CollapseButton.Visibility = Visibility.Collapsed;
         }
 
@@ -257,24 +359,27 @@ namespace CtrlWin
 
         private void TextsButton_Click(object sender, RoutedEventArgs e)
         {
+            StopVideo();
             LoadTextItems();
         }
 
         private void ImagesButton_Click(object sender, RoutedEventArgs e)
         {
+            StopVideo();
             LoadImageItems();
         }
 
         private void VideosButton_Click(object sender, RoutedEventArgs e)
         {
+            StopVideo();
             LoadVideoItems();
         }
 
         private void ChooseFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
             {
-                DialogResult result = dialog.ShowDialog();
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
 
                 if (result == System.Windows.Forms.DialogResult.OK)
                 {
@@ -415,9 +520,9 @@ namespace CtrlWin
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    using (var dialog = new FolderBrowserDialog())
+                    using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
                     {
-                        DialogResult dialogResult = dialog.ShowDialog();
+                        System.Windows.Forms.DialogResult dialogResult = dialog.ShowDialog();
 
                         if (dialogResult == System.Windows.Forms.DialogResult.OK)
                         {
@@ -429,9 +534,9 @@ namespace CtrlWin
             }
             else
             {
-                using (var dialog = new FolderBrowserDialog())
+                using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
                 {
-                    DialogResult dialogResult = dialog.ShowDialog();
+                    System.Windows.Forms.DialogResult dialogResult = dialog.ShowDialog();
 
                     if (dialogResult == System.Windows.Forms.DialogResult.OK)
                     {
@@ -444,9 +549,9 @@ namespace CtrlWin
 
         private void ChooseVideoFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
             {
-                DialogResult result = dialog.ShowDialog();
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
 
                 if (result == System.Windows.Forms.DialogResult.OK)
                 {
@@ -473,6 +578,81 @@ namespace CtrlWin
         {
             var videoDownloader = new VideoDownloaderService(_context);
             videoDownloader.DownloadVideo(url);
+        }
+
+        private void StopVideo()
+        {
+            FullVideoBox.Stop();
+            FullVideoBox.Source = null;
+        }
+
+        private void FullVideoBox_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            StopVideo();
+        }
+
+        private void EditableTextBlock_TextChanged(object sender, RoutedEventArgs e)
+        {
+            if (sender is EditableTextBlock editableTextBlock)
+            {
+                if (editableTextBlock.DataContext is ImageItem imageItem)
+                {
+                    var entity = _context.ImageItems.Find(imageItem.Id);
+                    if (entity != null)
+                    {
+                        entity.Name = editableTextBlock.Text;
+                        _context.SaveChanges();
+                    }
+                }
+                else if (editableTextBlock.DataContext is VideoItem videoItem)
+                {
+                    var entity = _context.VideoItems.Find(videoItem.Id);
+                    if (entity != null)
+                    {
+                        entity.Name = editableTextBlock.Text;
+                        _context.SaveChanges();
+                    }
+                }
+            }
+        }
+
+        private void RenameButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement frameworkElement && frameworkElement.Tag is object item)
+            {
+                string newName = Microsoft.VisualBasic.Interaction.InputBox("Enter new name:", "Rename");
+
+                if (!string.IsNullOrWhiteSpace(newName))
+                {
+                    try
+                    {
+                        if (item is ImageItem imageItem)
+                        {
+                            var entity = _context.ImageItems.Find(imageItem.Id);
+                            if (entity != null)
+                            {
+                                entity.Name = newName;
+                                _context.SaveChanges();
+                                LoadImageItems(); // Refresh the list
+                            }
+                        }
+                        else if (item is VideoItem videoItem)
+                        {
+                            var entity = _context.VideoItems.Find(videoItem.Id);
+                            if (entity != null)
+                            {
+                                entity.Name = newName;
+                                _context.SaveChanges();
+                                LoadVideoItems(); // Refresh the list
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error renaming item: {ex.Message}");
+                    }
+                }
+            }
         }
     }
 }

@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="CtrlWin.EditableTextBlock"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="editableTextBlock">
+    <Grid>
+        <TextBlock x:Name="TextBlockElement" Text="{Binding Text, ElementName=editableTextBlock, Mode=OneWay}"
+                   MouseDown="TextBlockElement_MouseDown"
+                   VerticalAlignment="Center" />
+        <TextBox x:Name="TextBoxElement" Text="{Binding Text, ElementName=editableTextBlock, Mode=TwoWay}"
+                 Visibility="Collapsed"
+                 LostFocus="TextBoxElement_LostFocus"
+                 KeyDown="TextBoxElement_KeyDown"
+                 VerticalAlignment="Center" />
+    </Grid>
+</UserControl>
