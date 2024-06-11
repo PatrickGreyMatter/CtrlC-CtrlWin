@@ -48,37 +48,40 @@
                         </Grid.ColumnDefinitions>
                         <!-- Display date and time -->
                         <TextBlock Text="{Binding DateSaved, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"
-                                   VerticalAlignment="Center"
-                                   Margin="5"
-                                   Grid.Column="0" />
+                           VerticalAlignment="Center"
+                           Margin="5"
+                           Grid.Column="0" />
                         <!-- Display dynamically resized thumbnail of the image -->
                         <Image Width="50" Height="50" Margin="5" Grid.Column="1" Source="{Binding FilePath, Converter={StaticResource FilePathToImageSourceConverter}}" />
                         <!-- Display text content -->
                         <TextBlock Text="{Binding Name}"
-                                   TextWrapping="NoWrap"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"
-                                   Margin="5"
-                                   Grid.Column="2" />
+                           TextWrapping="NoWrap"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"
+                           Margin="5"
+                           Grid.Column="2" />
                         <!-- Buttons for copying and deleting -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="5,0">
                             <Button Content="Copier"
-                                    Width="75"
-                                    Height="30"
-                                    Margin="5,0"
-                                    Click="CopyButton_Click"
-                                    Tag="{Binding Id}" />
+                            Width="75"
+                            Height="30"
+                            Margin="5,0"
+                            Click="CopyButton_Click"
+                            Tag="{Binding}" />
                             <Button Content="Supprimer"
-                                    Width="75"
-                                    Height="30"
-                                    Margin="5,0"
-                                    Click="DeleteButton_Click"
-                                    Tag="{Binding Id}" />
+                            Width="75"
+                            Height="30"
+                            Margin="5,0"
+                            Click="DeleteButton_Click"
+                            Tag="{Binding}" />
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+
+
 
         <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" ResizeDirection="Rows" Background="Gray"/>
 

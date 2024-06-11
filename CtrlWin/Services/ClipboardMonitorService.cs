@@ -15,13 +15,13 @@ namespace CtrlWin.Services
     {
         private readonly ClipboardDbContext _context;
         private readonly HiddenWindow _hiddenWindow;
+        private bool _isInternalChange;
 
         public event EventHandler ClipboardChanged = delegate { };
 
         public ClipboardMonitorService(ClipboardDbContext context)
         {
             _context = context;
-
             _hiddenWindow = new HiddenWindow();
             _hiddenWindow.ClipboardChanged += OnClipboardChanged;
             _hiddenWindow.Show();
@@ -29,6 +29,12 @@ namespace CtrlWin.Services
 
         private void OnClipboardChanged(object? sender, EventArgs? e)
         {
+            if (_isInternalChange)
+            {
+                _isInternalChange = false;
+                return;
+            }
+
             if (System.Windows.Clipboard.ContainsText())
             {
                 var text = System.Windows.Clipboard.GetText();
@@ -48,16 +54,36 @@ namespace CtrlWin.Services
             }
         }
 
+        public void CopyTextToClipboard(string text)
+        {
+            _isInternalChange = true;
+            System.Windows.Forms.Clipboard.SetText(text);
+        }
+
+        public void CopyImageToClipboard(BitmapSource image)
+        {
+            _isInternalChange = true;
+            using (var stream = new MemoryStream())
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(image));
+                encoder.Save(stream);
+                stream.Seek(0, SeekOrigin.Begin);
+                var bitmap = new System.Drawing.Bitmap(stream);
+
+                System.Windows.Forms.Clipboard.SetImage(bitmap);
+            }
+        }
+
         private string SaveImageToFile(BitmapSource image)
         {
             string directoryPath = Properties.Settings.Default.ImageFolderPath;
 
-            // Check if a directory path is specified
             if (string.IsNullOrEmpty(directoryPath))
             {
-                // Handle case when no directory is specified (optional)
                 throw new InvalidOperationException("No image folder selected. Please choose a folder.");
             }
+
             var fileName = $"Image_{DateTime.Now:yyyyMMddHHmmss}.png";
             var filePath = Path.Combine(directoryPath, fileName);
 
@@ -124,7 +150,6 @@ namespace CtrlWin.Services
             _context.TextItems.Add(textItem);
             _context.SaveChanges();
 
-            // Reload the items in the main window
             Application.Current.Dispatcher.Invoke(() =>
             {
                 ((MainWindow)Application.Current.MainWindow).LoadTextItems();
@@ -155,7 +180,6 @@ namespace CtrlWin.Services
                     NativeMethods.AddClipboardFormatListener(source.Handle);
                 };
 
-                // Hide the window from the taskbar and make it invisible
                 this.ShowInTaskbar = false;
                 this.WindowState = WindowState.Minimized;
                 this.Visibility = Visibility.Hidden;
@@ -180,4 +204,7 @@ namespace CtrlWin.Services
             public static extern bool AddClipboardFormatListener(IntPtr hwnd);
         }
     }
+
+
+
 }

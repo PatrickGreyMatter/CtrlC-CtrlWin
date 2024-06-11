@@ -304,33 +304,24 @@ namespace CtrlWin
 
         private void CopyButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement frameworkElement && frameworkElement.Tag is int id)
+            if (sender is FrameworkElement frameworkElement && frameworkElement.Tag is object item)
             {
                 try
                 {
-                    if (ClipboardListBox.SelectedItem is TextItem textItem)
+                    if (item is TextItem textItem)
                     {
-                        var item = _context.TextItems.Find(id);
-                        if (item != null)
-                        {
-                            System.Windows.Forms.Clipboard.SetText(item.Content);
-                        }
+                        _clipboardMonitorService.CopyTextToClipboard(textItem.Content);
                     }
-                    else if (ClipboardListBox.SelectedItem is ImageItem imageItem)
+                    else if (item is ImageItem imageItem)
                     {
-                        var item = _context.ImageItems.Find(id);
-                        if (item != null)
-                        {
-                            System.Windows.Forms.Clipboard.SetImage(System.Drawing.Image.FromFile(item.FilePath));
-                        }
+                        var bitmap = new BitmapImage(new Uri(imageItem.FilePath));
+                        _clipboardMonitorService.CopyImageToClipboard(bitmap);
                     }
-                    else if (ClipboardListBox.SelectedItem is VideoItem videoItem)
+                    else if (item is VideoItem videoItem)
                     {
-                        var item = _context.VideoItems.Find(id);
-                        if (item != null)
-                        {
-                            System.Windows.Forms.Clipboard.SetFileDropList(new System.Collections.Specialized.StringCollection { item.FilePath });
-                        }
+                        var fileCollection = new System.Collections.Specialized.StringCollection();
+                        fileCollection.Add(videoItem.FilePath);
+                        System.Windows.Forms.Clipboard.SetFileDropList(fileCollection);
                     }
                 }
                 catch (Exception ex)
@@ -342,37 +333,37 @@ namespace CtrlWin
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement frameworkElement && frameworkElement.Tag is int id)
+            if (sender is FrameworkElement frameworkElement && frameworkElement.Tag is object item)
             {
                 try
                 {
-                    if (ClipboardListBox.SelectedItem is TextItem textItem)
+                    if (item is TextItem textItem)
                     {
-                        var item = _context.TextItems.Find(id);
-                        if (item != null)
+                        var entity = _context.TextItems.Find(textItem.Id);
+                        if (entity != null)
                         {
-                            _context.TextItems.Remove(item);
+                            _context.TextItems.Remove(entity);
                         }
                     }
-                    else if (ClipboardListBox.SelectedItem is ImageItem imageItem)
+                    else if (item is ImageItem imageItem)
                     {
-                        var item = _context.ImageItems.Find(id);
-                        if (item != null)
+                        var entity = _context.ImageItems.Find(imageItem.Id);
+                        if (entity != null)
                         {
-                            _context.ImageItems.Remove(item);
+                            _context.ImageItems.Remove(entity);
                         }
                     }
-                    else if (ClipboardListBox.SelectedItem is VideoItem videoItem)
+                    else if (item is VideoItem videoItem)
                     {
-                        var item = _context.VideoItems.Find(id);
-                        if (item != null)
+                        var entity = _context.VideoItems.Find(videoItem.Id);
+                        if (entity != null)
                         {
-                            _context.VideoItems.Remove(item);
+                            _context.VideoItems.Remove(entity);
                         }
                     }
 
                     _context.SaveChanges();
-                    LoadTextItems();
+                    LoadTextItems(); // Adjust this method to refresh the list appropriately.
                 }
                 catch (Exception ex)
                 {
@@ -380,6 +371,7 @@ namespace CtrlWin
                 }
             }
         }
+
 
         private void ChooseImageFolder()
         {
