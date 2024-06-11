@@ -1,11 +1,13 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 using CtrlWin.Data;
 using CtrlWin.Models;
 using Application = System.Windows.Application;
-using ApplicationForms = System.Windows.Forms.Application;
+using MessageBox = System.Windows.MessageBox;
 
 namespace CtrlWin.Services
 {
@@ -13,6 +15,8 @@ namespace CtrlWin.Services
     {
         private readonly ClipboardDbContext _context;
         private readonly HiddenWindow _hiddenWindow;
+
+        public event EventHandler ClipboardChanged = delegate { };
 
         public ClipboardMonitorService(ClipboardDbContext context)
         {
@@ -23,13 +27,81 @@ namespace CtrlWin.Services
             _hiddenWindow.Show();
         }
 
-        private void OnClipboardChanged(object sender, EventArgs e)
+        private void OnClipboardChanged(object? sender, EventArgs? e)
         {
             if (System.Windows.Clipboard.ContainsText())
             {
                 var text = System.Windows.Clipboard.GetText();
-                SaveTextToDatabase(text);
+                if (!IsTextInDatabase(text))
+                {
+                    SaveTextToDatabase(text);
+                }
             }
+            else if (System.Windows.Clipboard.ContainsImage())
+            {
+                var image = System.Windows.Clipboard.GetImage();
+                var filePath = SaveImageToFile(image);
+                if (!IsImageInDatabase(filePath))
+                {
+                    SaveImageToDatabase(filePath);
+                }
+            }
+        }
+
+        private string SaveImageToFile(BitmapSource image)
+        {
+            var directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+            var fileName = $"Image_{DateTime.Now:yyyyMMddHHmmss}.png";
+            var filePath = Path.Combine(directoryPath, fileName);
+
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            try
+            {
+                using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    var encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(image));
+                    encoder.Save(fileStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+                throw new Exception("Failed to save image", ex);
+            }
+
+            return filePath;
+        }
+
+        private bool IsImageInDatabase(string filePath)
+        {
+            return _context.ImageItems.Any(i => i.FilePath == filePath);
+        }
+
+        private void SaveImageToDatabase(string filePath)
+        {
+            var imageItem = new ImageItem
+            {
+                FilePath = filePath,
+                DateSaved = DateTime.Now,
+                Size = new FileInfo(filePath).Length,
+                Name = "Copied Image"
+            };
+
+            _context.ImageItems.Add(imageItem);
+            _context.SaveChanges();
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ((MainWindow)Application.Current.MainWindow).LoadImageItems();
+            });
         }
 
         private void SaveTextToDatabase(string text)
@@ -52,6 +124,11 @@ namespace CtrlWin.Services
             });
         }
 
+        private bool IsTextInDatabase(string text)
+        {
+            return _context.TextItems.Any(t => t.Content == text);
+        }
+
         public void Dispose()
         {
             _hiddenWindow.ClipboardChanged -= OnClipboardChanged;
@@ -60,7 +137,7 @@ namespace CtrlWin.Services
 
         private class HiddenWindow : Window
         {
-            public event EventHandler ClipboardChanged;
+            public event EventHandler ClipboardChanged = delegate { };
 
             public HiddenWindow()
             {
@@ -86,7 +163,6 @@ namespace CtrlWin.Services
                 return IntPtr.Zero;
             }
         }
-
 
         private static class NativeMethods
         {

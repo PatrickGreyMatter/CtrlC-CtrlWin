@@ -26,4 +26,10 @@
 		</PackageReference>
 	</ItemGroup>
 
+
+	<ItemGroup>
+	  <Folder Include="Images\" />
+	  <Folder Include="Videos\" />
+	</ItemGroup>
+
 </Project>
