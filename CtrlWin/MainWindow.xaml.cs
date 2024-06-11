@@ -151,9 +151,6 @@ namespace CtrlWin
             ResetImageTransform();
         }
 
-
-
-
         private void ResetImageTransform()
         {
             scaleTransform = new ScaleTransform(1.0, 1.0);
@@ -166,7 +163,6 @@ namespace CtrlWin
                 scrollViewer.ScrollToVerticalOffset(0);
             }
         }
-
 
         private void FitImageToContainer()
         {
@@ -198,9 +194,6 @@ namespace CtrlWin
             }
         }
 
-
-
-
         private void FullImageBox_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (Keyboard.Modifiers == ModifierKeys.Shift)
@@ -230,11 +223,6 @@ namespace CtrlWin
                 image.LayoutTransform = transform;
             }
         }
-
-
-
-
-
 
         private T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
@@ -300,7 +288,7 @@ namespace CtrlWin
         {
             var settingsListBox = new System.Windows.Controls.ListBox();
 
-            var settingsOptions = new List<string> { "Choisir le dossier Images" };
+            var settingsOptions = new List<string> { "Choisir le dossier Images", "Choisir le dossier Videos" };
 
             foreach (var option in settingsOptions)
             {
@@ -323,11 +311,6 @@ namespace CtrlWin
             window.ShowDialog();
         }
 
-        private void MenuItemImageFolder_Click(object sender, RoutedEventArgs e)
-        {
-            ChooseImageFolder();
-        }
-
         private void SettingsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (sender is System.Windows.Controls.ListBox listBox && listBox.SelectedItem is string selectedOption)
@@ -336,6 +319,9 @@ namespace CtrlWin
                 {
                     case "Choisir le dossier Images":
                         ChooseImageFolder();
+                        break;
+                    case "Choisir le dossier Videos":
+                        ChooseVideoFolderButton_Click(sender, e);
                         break;
                 }
             }
@@ -389,6 +375,10 @@ namespace CtrlWin
                         var entity = _context.ImageItems.Find(imageItem.Id);
                         if (entity != null)
                         {
+                            if (File.Exists(imageItem.FilePath))
+                            {
+                                File.Delete(imageItem.FilePath);
+                            }
                             _context.ImageItems.Remove(entity);
                         }
                     }
@@ -397,12 +387,16 @@ namespace CtrlWin
                         var entity = _context.VideoItems.Find(videoItem.Id);
                         if (entity != null)
                         {
+                            if (File.Exists(videoItem.FilePath))
+                            {
+                                File.Delete(videoItem.FilePath);
+                            }
                             _context.VideoItems.Remove(entity);
                         }
                     }
 
                     _context.SaveChanges();
-                    LoadTextItems(); // Adjust this method to refresh the list appropriately.
+                    LoadVideoItems(); // Adjust this method to refresh the list appropriately.
                 }
                 catch (Exception ex)
                 {
@@ -410,7 +404,6 @@ namespace CtrlWin
                 }
             }
         }
-
 
         private void ChooseImageFolder()
         {
@@ -447,6 +440,39 @@ namespace CtrlWin
                     }
                 }
             }
+        }
+
+        private void ChooseVideoFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                DialogResult result = dialog.ShowDialog();
+
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    Properties.Settings.Default.VideoFolderPath = dialog.SelectedPath;
+                    Properties.Settings.Default.Save();
+                }
+            }
+        }
+
+        private void CopyVideoLinkButton_Click(object sender, RoutedEventArgs e)
+        {
+            string videoUrl = VideoLinkTextBox.Text;
+            if (!string.IsNullOrWhiteSpace(videoUrl))
+            {
+                CopyVideoLink(videoUrl);
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid video URL.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CopyVideoLink(string url)
+        {
+            var videoDownloader = new VideoDownloaderService(_context);
+            videoDownloader.DownloadVideo(url);
         }
     }
 }

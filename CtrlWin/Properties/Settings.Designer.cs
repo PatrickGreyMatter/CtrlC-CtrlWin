@@ -34,5 +34,17 @@ namespace CtrlWin.Properties {
                 this["ImageFolderPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string VideoFolderPath {
+            get {
+                return ((string)(this["VideoFolderPath"]));
+            }
+            set {
+                this["VideoFolderPath"] = value;
+            }
+        }
     }
 }

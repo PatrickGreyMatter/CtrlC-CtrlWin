@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -120,12 +121,13 @@ namespace CtrlWin.Services
 
         private void SaveImageToDatabase(string filePath)
         {
+            var fileName = Path.GetFileNameWithoutExtension(filePath);
             var imageItem = new ImageItem
             {
                 FilePath = filePath,
                 DateSaved = DateTime.Now,
                 Size = new FileInfo(filePath).Length,
-                Name = "Copied Image"
+                Name = new string(fileName.Take(20).ToArray()) // First 10 characters of the file name
             };
 
             _context.ImageItems.Add(imageItem);
@@ -144,7 +146,7 @@ namespace CtrlWin.Services
                 Content = text,
                 DateSaved = DateTime.Now,
                 Size = text.Length,
-                Name = "Copied Text"
+                Name = new string(text.Where(c => !char.IsWhiteSpace(c)).Take(20).ToArray()) // First 10 non-space characters
             };
 
             _context.TextItems.Add(textItem);
@@ -204,7 +206,4 @@ namespace CtrlWin.Services
             public static extern bool AddClipboardFormatListener(IntPtr hwnd);
         }
     }
-
-
-
 }
