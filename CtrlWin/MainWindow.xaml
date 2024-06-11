@@ -21,7 +21,7 @@
         <TextBlock Text="CtrlC/CtrlWin" FontSize="20" FontWeight="Bold" Margin="10" Grid.Row="0"/>
 
         <!-- Settings Button -->
-        <Button x:Name="SettingsButton" Content="Settings" DockPanel.Dock="Right" Click="SettingsButton_Click" Margin="732,13,6,15"  Width="60" Height="30" Grid.Row="0">
+        <Button x:Name="SettingsButton" Content="Settings" DockPanel.Dock="Right" Click="SettingsButton_Click" Margin="732,13,6,15" Width="60" Height="30" Grid.Row="0">
             <Button.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Choose Image Folder" Click="ChooseFolderButton_Click"/>
@@ -49,21 +49,21 @@
                 <DataTemplate>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <!-- Display date and time -->
                         <TextBlock Text="{Binding DateSaved, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"
-                            VerticalAlignment="Center"
-                            Margin="5"
-                            Grid.Column="0" />
+                                   VerticalAlignment="Center"
+                                   Margin="5"
+                                   Grid.Column="0"/>
                         <!-- Display dynamically resized thumbnail of the image -->
-                        <Image Width="50" Height="50" Margin="5" Grid.Column="1" Source="{Binding FilePath, Converter={StaticResource FilePathToImageSourceConverter}}" />
+                        <Image Width="50" Height="50" Margin="5" Grid.Column="1" Source="{Binding FilePath, Converter={StaticResource FilePathToImageSourceConverter}}"/>
                         <!-- Text block for file name -->
-                        <TextBlock Text="{Binding Name}" Margin="5" VerticalAlignment="Center" Grid.Column="2" />
+                        <TextBlock Text="{Binding Name}" Margin="5" VerticalAlignment="Center" Grid.Column="2"/>
                         <!-- Buttons for copying, renaming, and deleting -->
                         <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="5,0">
                             <Button Content="Copier"
@@ -71,19 +71,19 @@
                                     Height="30"
                                     Margin="5,0"
                                     Click="CopyButton_Click"
-                                    Tag="{Binding}" />
+                                    Tag="{Binding}"/>
                             <Button Content="Renommer"
                                     Width="75"
                                     Height="30"
                                     Margin="5,0"
                                     Click="RenameButton_Click"
-                                    Tag="{Binding}" />
+                                    Tag="{Binding}"/>
                             <Button Content="Supprimer"
                                     Width="75"
                                     Height="30"
                                     Margin="5,0"
                                     Click="DeleteButton_Click"
-                                    Tag="{Binding}" />
+                                    Tag="{Binding}"/>
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
@@ -94,18 +94,18 @@
         <GridSplitter Grid.Row="4" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" ResizeDirection="Rows" Background="Gray"/>
 
         <!-- Content Viewer -->
-        <Grid Grid.Row="5" Margin="10">
+        <Grid Grid.Row="5" Margin="10" VerticalAlignment="Stretch">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                <StackPanel x:Name="ContentPanel">
+                <StackPanel x:Name="ContentPanel" VerticalAlignment="Stretch">
                     <TextBox x:Name="FullTextBox"
                              IsReadOnly="True"
                              VerticalScrollBarVisibility="Auto"
                              TextWrapping="Wrap"
-                             AcceptsReturn="True" />
+                             AcceptsReturn="True"/>
                     <Image x:Name="FullImageBox"
                            Visibility="Collapsed"
                            Stretch="Uniform"
@@ -118,9 +118,10 @@
                             <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
                         </Image.LayoutTransform>
                     </Image>
-                    <Grid x:Name="FullVideoContainer" Visibility="Collapsed">
+                    <Grid x:Name="FullVideoContainer" Visibility="Collapsed" VerticalAlignment="Stretch">
                         <MediaElement x:Name="FullVideoBox"
                                       Stretch="Uniform"
+                                      Width="760"
                                       HorizontalAlignment="Stretch"
                                       VerticalAlignment="Stretch"
                                       LoadedBehavior="Manual"
@@ -140,7 +141,7 @@
                     Height="30"
                     Margin="5"
                     Click="CollapseButton_Click"
-                    HorizontalAlignment="Right" />
+                    HorizontalAlignment="Right"/>
         </Grid>
     </Grid>
 </Window>
