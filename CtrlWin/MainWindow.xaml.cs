@@ -96,6 +96,9 @@ namespace CtrlWin
                         bitmap.EndInit();
                         FullImageBox.Source = bitmap;
                         FullImageBox.Visibility = Visibility.Visible;
+
+                        // Fit image to container
+                        FitImageToContainer();
                     }
                     else
                     {
@@ -148,6 +151,9 @@ namespace CtrlWin
             ResetImageTransform();
         }
 
+
+
+
         private void ResetImageTransform()
         {
             scaleTransform = new ScaleTransform(1.0, 1.0);
@@ -160,6 +166,40 @@ namespace CtrlWin
                 scrollViewer.ScrollToVerticalOffset(0);
             }
         }
+
+
+        private void FitImageToContainer()
+        {
+            if (FullImageBox.Source != null)
+            {
+                var imageSource = (BitmapSource)FullImageBox.Source;
+
+                double containerWidth = FullImageBox.ActualWidth;
+                double containerHeight = FullImageBox.ActualHeight;
+
+                double imageWidth = imageSource.PixelWidth;
+                double imageHeight = imageSource.PixelHeight;
+
+                double scaleX = containerWidth / imageWidth;
+                double scaleY = containerHeight / imageHeight;
+
+                double scale = Math.Min(scaleX, scaleY);
+
+                scaleTransform = new ScaleTransform(scale, scale);
+                FullImageBox.LayoutTransform = scaleTransform;
+
+                // Reset scroll position
+                var scrollViewer = FindVisualChild<ScrollViewer>(FullImageBox);
+                if (scrollViewer != null)
+                {
+                    scrollViewer.ScrollToHorizontalOffset(0);
+                    scrollViewer.ScrollToVerticalOffset(0);
+                }
+            }
+        }
+
+
+
 
         private void FullImageBox_MouseWheel(object sender, MouseWheelEventArgs e)
         {
@@ -174,7 +214,7 @@ namespace CtrlWin
 
                 // Define zoom intensity and minimum/maximum scale
                 double zoomIntensity = 0.1;
-                double minScale = 0.1;
+                double minScale = 0.1; // Adjusted minimum scale to allow zooming out to a smaller size
                 double maxScale = 10.0;
 
                 // Calculate new scale
@@ -186,14 +226,13 @@ namespace CtrlWin
                 // Set the new scale
                 transform.ScaleX = transform.ScaleY = newScale;
 
-                // Ensure that the image is still visible when zooming out
-                if (newScale < 1.0)
-                {
-                    image.Width = image.ActualWidth * newScale;
-                    image.Height = image.ActualHeight * newScale;
-                }
+                // Update the image layout transform
+                image.LayoutTransform = transform;
             }
         }
+
+
+
 
 
 

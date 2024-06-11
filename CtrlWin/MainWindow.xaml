@@ -20,15 +20,15 @@
         <TextBlock Text="Clipboard Manager" FontSize="20" FontWeight="Bold" Margin="10"/>
 
         <Button Content="Settings" DockPanel.Dock="Right" Click="SettingsButton_Click" Margin="732,13,6,15"  Width="60" Height="30">
-                <!-- Context menu for settings button -->
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <!-- Menu item to choose image folder -->
-                        <MenuItem Header="Choose Image Folder" Click="ChooseFolderButton_Click"/>
-                        <!-- Other menu items can be added here -->
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
+            <!-- Context menu for settings button -->
+            <Button.ContextMenu>
+                <ContextMenu>
+                    <!-- Menu item to choose image folder -->
+                    <MenuItem Header="Choose Image Folder" Click="ChooseFolderButton_Click"/>
+                    <!-- Other menu items can be added here -->
+                </ContextMenu>
+            </Button.ContextMenu>
+        </Button>
 
         <StackPanel Orientation="Horizontal" Margin="473,8,77,9">
             <Button Content="Texts" Click="TextsButton_Click" Background="LightBlue" Margin="5" Width="60" Height="30"/>
@@ -80,9 +80,6 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-
-
-
         <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" ResizeDirection="Rows" Background="Gray"/>
 
         <Grid Grid.Row="4" Margin="10">
@@ -98,17 +95,17 @@
                              TextWrapping="Wrap"
                              AcceptsReturn="True" />
                     <Image x:Name="FullImageBox"
-       Visibility="Collapsed"
-       Stretch="Uniform"
-       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-       ScrollViewer.VerticalScrollBarVisibility="Auto"
-       MouseWheel="FullImageBox_MouseWheel"
-       >
+                           Visibility="Collapsed"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Stretch"
+                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                           ScrollViewer.VerticalScrollBarVisibility="Auto"
+                           MouseWheel="FullImageBox_MouseWheel">
                         <Image.LayoutTransform>
                             <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
                         </Image.LayoutTransform>
                     </Image>
-
                     <MediaElement x:Name="FullVideoBox"
                                   Visibility="Collapsed"
                                   Stretch="Uniform"/>
