@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using CtrlWin.Data;
 using CtrlWin.Models;
 using CtrlWin.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Windows.Forms; // Use the fully qualified name for WinForms
 using MessageBox = System.Windows.MessageBox;
-using System.IO; // Explicitly specify MessageBox to avoid ambiguity
+using System.Windows.Forms;
 
 namespace CtrlWin
 {
@@ -19,16 +20,15 @@ namespace CtrlWin
     {
         private readonly ClipboardDbContext _context;
         private readonly ClipboardMonitorService _clipboardMonitorService;
+        private ScaleTransform scaleTransform = new ScaleTransform(1.0, 1.0);
 
         public MainWindow()
         {
             InitializeComponent();
             _context = new ClipboardDbContext();
 
-            // Ensure the database is up-to-date
             _context.Database.EnsureCreated();
 
-            // Start clipboard monitoring
             _clipboardMonitorService = new ClipboardMonitorService(_context);
 
             LoadTextItems();
@@ -143,23 +143,75 @@ namespace CtrlWin
                 FullVideoBox.Visibility = Visibility.Collapsed;
                 CollapseButton.Visibility = Visibility.Collapsed;
             }
+
+            // Reset zoom level and scroll position
+            ResetImageTransform();
+        }
+
+        private void ResetImageTransform()
+        {
+            scaleTransform = new ScaleTransform(1.0, 1.0);
+            FullImageBox.LayoutTransform = scaleTransform;
+
+            var scrollViewer = FindVisualChild<ScrollViewer>(FullImageBox);
+            if (scrollViewer != null)
+            {
+                scrollViewer.ScrollToHorizontalOffset(0);
+                scrollViewer.ScrollToVerticalOffset(0);
+            }
+        }
+
+        private void FullImageBox_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Shift)
+            {
+                e.Handled = true; // Prevent default scrolling behavior
+
+                var image = (System.Windows.Controls.Image)sender;
+
+                // Get the current scale transform
+                var transform = (ScaleTransform)image.LayoutTransform;
+
+                // Define zoom intensity and minimum/maximum scale
+                double zoomIntensity = 0.1;
+                double minScale = 0.1;
+                double maxScale = 10.0;
+
+                // Calculate new scale
+                double newScale = transform.ScaleX + (e.Delta > 0 ? zoomIntensity : -zoomIntensity);
+
+                // Limit the scale within the min and max scale
+                newScale = Math.Max(minScale, Math.Min(maxScale, newScale));
+
+                // Set the new scale
+                transform.ScaleX = transform.ScaleY = newScale;
+
+                // Ensure that the image is still visible when zooming out
+                if (newScale < 1.0)
+                {
+                    image.Width = image.ActualWidth * newScale;
+                    image.Height = image.ActualHeight * newScale;
+                }
+            }
         }
 
 
 
-
-
-
-        private void FullImageBox_MouseWheel(object sender, MouseWheelEventArgs e)
+        private T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
-            if (e.Delta > 0)
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
             {
-                FullImageBox.LayoutTransform = new ScaleTransform(1.2, 1.2);
+                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                if (child != null && child is T)
+                    return (T)child;
+                else
+                {
+                    T childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null)
+                        return childOfChild;
+                }
             }
-            else
-            {
-                FullImageBox.LayoutTransform = new ScaleTransform(1.0, 1.0);
-            }
+            return null;
         }
 
         private void CollapseButton_Click(object sender, RoutedEventArgs e)
@@ -189,6 +241,65 @@ namespace CtrlWin
         private void VideosButton_Click(object sender, RoutedEventArgs e)
         {
             LoadVideoItems();
+        }
+
+        private void ChooseFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                DialogResult result = dialog.ShowDialog();
+
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    Properties.Settings.Default.ImageFolderPath = dialog.SelectedPath;
+                    Properties.Settings.Default.Save();
+                }
+            }
+        }
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var settingsListBox = new System.Windows.Controls.ListBox();
+
+            var settingsOptions = new List<string> { "Choisir le dossier Images" };
+
+            foreach (var option in settingsOptions)
+            {
+                settingsListBox.Items.Add(option);
+            }
+
+            settingsListBox.SelectionChanged += SettingsListBox_SelectionChanged;
+
+            settingsListBox.FontSize = 16;
+
+            var window = new Window
+            {
+                Content = settingsListBox,
+                Width = 200,
+                Height = 300,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.NoResize
+            };
+
+            window.ShowDialog();
+        }
+
+        private void MenuItemImageFolder_Click(object sender, RoutedEventArgs e)
+        {
+            ChooseImageFolder();
+        }
+
+        private void SettingsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ListBox listBox && listBox.SelectedItem is string selectedOption)
+            {
+                switch (selectedOption)
+                {
+                    case "Choisir le dossier Images":
+                        ChooseImageFolder();
+                        break;
+                }
+            }
         }
 
         private void CopyButton_Click(object sender, RoutedEventArgs e)
@@ -261,11 +372,48 @@ namespace CtrlWin
                     }
 
                     _context.SaveChanges();
-                    LoadTextItems();  // Adjust this to reload the appropriate items
+                    LoadTextItems();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error deleting item: {ex.Message}");
+                }
+            }
+        }
+
+        private void ChooseImageFolder()
+        {
+            string imagePath = Properties.Settings.Default.ImageFolderPath;
+
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                MessageBoxResult result = MessageBox.Show($"Le dossier d'enregistrement actuel pour les images est : {imagePath}. Voulez-vous le modifier ?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    using (var dialog = new FolderBrowserDialog())
+                    {
+                        DialogResult dialogResult = dialog.ShowDialog();
+
+                        if (dialogResult == System.Windows.Forms.DialogResult.OK)
+                        {
+                            Properties.Settings.Default.ImageFolderPath = dialog.SelectedPath;
+                            Properties.Settings.Default.Save();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                using (var dialog = new FolderBrowserDialog())
+                {
+                    DialogResult dialogResult = dialog.ShowDialog();
+
+                    if (dialogResult == System.Windows.Forms.DialogResult.OK)
+                    {
+                        Properties.Settings.Default.ImageFolderPath = dialog.SelectedPath;
+                        Properties.Settings.Default.Save();
+                    }
                 }
             }
         }

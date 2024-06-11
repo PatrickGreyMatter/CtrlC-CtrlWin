@@ -50,7 +50,14 @@ namespace CtrlWin.Services
 
         private string SaveImageToFile(BitmapSource image)
         {
-            var directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+            string directoryPath = Properties.Settings.Default.ImageFolderPath;
+
+            // Check if a directory path is specified
+            if (string.IsNullOrEmpty(directoryPath))
+            {
+                // Handle case when no directory is specified (optional)
+                throw new InvalidOperationException("No image folder selected. Please choose a folder.");
+            }
             var fileName = $"Image_{DateTime.Now:yyyyMMddHHmmss}.png";
             var filePath = Path.Combine(directoryPath, fileName);
 
